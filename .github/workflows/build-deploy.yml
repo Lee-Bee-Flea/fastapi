@@ -8,11 +8,23 @@ on: [push, pull_request]
   #   branches:
   #     - "test_branch"
 
+# https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md#matrix-testing
+
 jobs:
   job1: 
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [ '2.x', '3.x' ]
     steps:
       - name: pulling git repo
         uses: actions/checkout@v3
-      - name: say hi to lee
-        run: echo "hello lee"
+      - name: install python version '2.x' & '3.x'
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          # python-version: [ '2.x', '3.x', 'pypy2.7', 'pypy3.7', 'pypy3.8' ]
+      - name: update pip
+        run: python -m pip install --upgrade pip
+      - name: install all dependencies
+        run: pip install -r requirements.txt
