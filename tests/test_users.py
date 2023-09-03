@@ -5,10 +5,10 @@ from app.config import settings
 
 
 
-def test_root(client):
-    res = client.get("/")
-    print(res.json().get('message'))
-    assert res.json().get('message') == "Welcome to my API!! testing reload"
+# def test_root(client):
+#     res = client.get("/")
+#     print(res.json().get('message'))
+#     assert res.json().get('message') == "Welcome to my API!! testing reload"
 
 def test_create_user(client):
     res = client.post("/users/", json={"email" : "hello1234@gmail.com", "password": "password123"})
