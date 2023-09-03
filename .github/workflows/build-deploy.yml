@@ -10,20 +10,21 @@ on: [push, pull_request]
 
 # https://github.com/actions/setup-python/blob/main/docs/advanced-usage.md#matrix-testing
 
-env:
-  DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
-  DATABASE_PORT: ${{secrets.DATABASE_PORT}}
-  DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
-  DATABASE_NAME: ${{secrets.DATABASE_NAME}}
-  DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
-  SECRET_KEY: ${{secrets.SECRET_KEY}}
-  ALGORITHM: ${{secrets.ALGORITHM}}
-  ACCESS_TOKEN_EXPIRE_MINUTES: ${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
+
 
 jobs:
   job1: 
     environment:
       name: testing
+    env:
+      DATABASE_HOSTNAME: ${{secrets.DATABASE_HOSTNAME}}
+      DATABASE_PORT: ${{secrets.DATABASE_PORT}}
+      DATABASE_PASSWORD: ${{secrets.DATABASE_PASSWORD}}
+      DATABASE_NAME: ${{secrets.DATABASE_NAME}}
+      DATABASE_USERNAME: ${{secrets.DATABASE_USERNAME}}
+      SECRET_KEY: ${{secrets.SECRET_KEY}}
+      ALGORITHM: ${{secrets.ALGORITHM}}
+      ACCESS_TOKEN_EXPIRE_MINUTES: ${{secrets.ACCESS_TOKEN_EXPIRE_MINUTES}}
     runs-on: ubuntu-latest
     strategy:
       matrix:
