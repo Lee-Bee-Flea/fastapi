@@ -71,3 +71,21 @@ class TokenData(BaseModel):
 class Votey(BaseModel):
     post_id: int
     direction: conint(ge=0,le=1)
+
+# what a user should provide to create a set
+class SetCreate(BaseModel):
+    weight: float
+    repetitions: int
+    rir: Optional[int] = 0
+
+# what should be returned to a user after creating a set
+class SetOut(SetCreate):
+    epley: float
+    brzycki: float
+    set_group_rank: Optional[int]
+    set_group_id: Optional[str]
+    created_at: datetime
+    user_id: int
+
+    class Config:
+        orm_mode = True
