@@ -44,6 +44,7 @@ def create_set(set_group: schemas.SetGroupCreate, db: Session = Depends(get_db),
 
     new_set_group = models.SetGroup(user_id = current_user.id, exercise_id = exercise_id)
 
+    #  these steps allow me to save the set_group entry, then grab its ID for the following set creation
     db.add(new_set_group)
     db.flush()
     db.refresh(new_set_group)
