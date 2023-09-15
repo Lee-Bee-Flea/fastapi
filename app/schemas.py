@@ -1,7 +1,7 @@
-from pydantic import BaseModel, EmailStr
-from pydantic.types import conint
+from pydantic import BaseModel, EmailStr, PositiveInt
+from pydantic.types import conint, confloat
 from datetime import datetime
-from typing import Optional
+from typing import Optional, List
 
 # changed name to Posty to distinguish from Post(Base) from SQLAlchemy models
 # this is a pydantic model for reference
@@ -74,9 +74,9 @@ class Votey(BaseModel):
 
 # what a user should provide to create a set
 class SetCreate(BaseModel):
-    weight: float
-    repetitions: int
-    rir: Optional[int] = 0
+    weight: confloat(ge=0)
+    repetitions: conint(ge=0)
+    rir: Optional[conint(ge=0)] = 0
 
 # what should be returned to a user after creating a set
 class SetOut(SetCreate):
@@ -89,3 +89,11 @@ class SetOut(SetCreate):
 
     class Config:
         orm_mode = True
+
+
+class SetGroupCreate(BaseModel):
+    exercise_id: int
+    set_list: List[SetCreate]
+
+class SetGroupOut(SetGroupCreate):
+    pass
