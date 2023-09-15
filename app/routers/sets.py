@@ -12,8 +12,8 @@ router = APIRouter(
     prefix="/sets",
     tags = ['Sets'])
 
+
 @router.post("/", status_code=status.HTTP_201_CREATED, response_model=schemas.SetOut)
-# @router.post("/", status_code=status.HTTP_201_CREATED)
 def create_set(set: schemas.SetCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     epley = get_epley(weight=set.weight, repetitions=set.repetitions , rir=set.rir)
@@ -27,15 +27,5 @@ def create_set(set: schemas.SetCreate, db: Session = Depends(get_db), current_us
     db.add(new_set)
     db.commit()
     db.refresh(new_set)
-
-    print(new_set)
-
-    # print(new_post.repetitions * new_post.weight)
-    
-    # •• unpacks the python dict 
-    # new_set = models.Set(user_id = current_user.id, **set.model_dump())
-    # db.add(new_set)
-    # db.commit()
-    # db.refresh(new_set)
 
     return new_set
