@@ -98,7 +98,7 @@ class ProgrammeInstance(Base):
     id = Column(Integer, primary_key=True, nullable=False)
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     programme_id = Column(Integer, ForeignKey("programmes.id", ondelete="CASCADE"), nullable=False)
-    start_at = Column(TIMESTAMP(timezone=True), nullable=False)
+    start_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     completed_at = Column(TIMESTAMP(timezone=True))
     cancelled_at = Column(TIMESTAMP(timezone=True))
     status = Column(String, nullable=False)
@@ -115,5 +115,26 @@ class Programme(Base):
     description = Column(String, nullable=False)
     version = Column(String, nullable=False)
     goals = Column(ARRAY(String))
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+
+class StrengthFoundationSignup(Base):
+    __tablename__ = 'strength_foundation_signups'
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    programme_instance_id = Column(Integer, ForeignKey("programme_instances.id", ondelete="CASCADE"), nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    squat = Column(Boolean, nullable=False)
+    deadlift = Column(Boolean, nullable=False)
+    bench_press = Column(Boolean, nullable=False)
+    overhead_press = Column(Boolean, nullable=False)
+    pullup = Column(Boolean, nullable=False)
+    start_bodyweight = Column(Double, nullable=False)
+    start_squat_rm = Column(Double)
+    start_deadlift_rm = Column(Double)
+    start_bench_press_rm = Column(Double)
+    start_overhead_press_rm = Column(Double)
+    start_pullup_rm = Column(Double)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))

@@ -2,6 +2,7 @@ from pydantic import BaseModel, EmailStr, PositiveInt
 from pydantic.types import conint, confloat
 from datetime import datetime
 from typing import Optional, List
+from enum import Enum
 
 # changed name to Posty to distinguish from Post(Base) from SQLAlchemy models
 # this is a pydantic model for reference
@@ -95,5 +96,44 @@ class SetGroupCreate(BaseModel):
     exercise_id: int
     set_list: List[SetCreate]
 
+
 class SetGroupOut(SetGroupCreate):
     pass
+
+
+class ExerciseRMPair(BaseModel):
+    included: bool
+    rep_max: Optional[confloat(ge=0)] = None
+
+
+class StrengthFoundationSignup(BaseModel):
+    start_bodyweight: confloat(ge=0)
+    squat: ExerciseRMPair
+    deadlift: ExerciseRMPair
+    bench_press: ExerciseRMPair
+    overhead_press: ExerciseRMPair
+    pullup: ExerciseRMPair
+
+
+class StrengthFoundationSignupConfirm(BaseModel):
+    programme_name: str
+    start_date: datetime
+    programme_instance_id: int
+
+
+class CancelOptions(str, Enum):
+    injured = 'injured'
+    difficulty_high = 'too hard'
+    difficulty_low = 'too easy'
+    starting_new_programme = 'starting new programme'
+    restarting_same_programme = 'restarting same programme'
+
+
+class StrengthFoundationCancel(BaseModel):
+    reason: CancelOptions
+
+
+class StrengthFoundationCancelConfirm(BaseModel):
+    programme_name: str
+    cancelled_date: datetime
+    programme_instance_id: int

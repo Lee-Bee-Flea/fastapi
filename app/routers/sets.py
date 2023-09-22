@@ -32,7 +32,7 @@ def create_set(set: schemas.SetCreate, db: Session = Depends(get_db), current_us
 
 
 @router.post("/group/", status_code=status.HTTP_201_CREATED, response_model=schemas.SetGroupOut)
-def create_set(set_group: schemas.SetGroupCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+def create_set_group(set_group: schemas.SetGroupCreate, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
 
     exercise_id = set_group.exercise_id
     set_list = set_group.set_list
