@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from . import models
 from .database import engine
-from .routers import post, user, auth, vote, sets, strength_foundation
+from .routers import post, user, auth, vote, sets, strength_foundation, test_router
 from .config import settings
 
 print(settings.database_username)
@@ -33,6 +33,7 @@ app.include_router(auth.router)
 app.include_router(vote.router)
 app.include_router(sets.router)
 app.include_router(strength_foundation.router)
+app.include_router(test_router.router)
 
 @app.get("/")
 async def root():

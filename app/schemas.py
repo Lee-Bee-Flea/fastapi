@@ -79,10 +79,18 @@ class SetCreate(BaseModel):
     repetitions: conint(ge=0)
     rir: Optional[conint(ge=0)] = 0
 
+# what a SessionPlan should give the user
+class SetPlan(BaseModel):
+    weight: confloat(ge=0)
+    # this is a string to handle the 10 or more than (10+) rep cases
+    repetitions: str
+    rir: Optional[conint(ge=0)] = 0
+
 # what should be returned to a user after creating a set
 class SetOut(SetCreate):
     epley: float
     brzycki: float
+    rep_max: float
     set_group_rank: Optional[int]
     set_group_id: Optional[str]
     created_at: datetime
@@ -137,3 +145,20 @@ class StrengthFoundationCancelConfirm(BaseModel):
     programme_name: str
     cancelled_date: datetime
     programme_instance_id: int
+
+
+class SessionPlan(BaseModel):
+    exercise_name: str
+    session_number: int
+    # added start and end to make copying output into a SessionCreate easier
+    start: datetime
+    end: datetime
+    set_list: List[SetPlan]
+
+
+class SessionCreate(BaseModel):
+    exercise_name: str
+    session_number: int
+    start: datetime
+    end: datetime
+    set_list: List[SetCreate]

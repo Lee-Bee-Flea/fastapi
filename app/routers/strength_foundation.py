@@ -1,10 +1,12 @@
 from fastapi import Body, FastAPI, Response, status, HTTPException, Depends, APIRouter
 from .. import models, schemas, oauth2
 from sqlalchemy import func
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, aliased
 from ..database import get_db
 from typing import List, Optional
-from app.functions import get_epley, get_brzycki
+from app.functions.general_funcs import get_brzycki, get_epley
+from app.functions.strength_foundation_funcs import check_exercise_input, get_strength_foundation_session_plan, check_active_programme_exists, query_submissions_for_exercise
+from datetime import datetime
 
 
 router = APIRouter(
@@ -68,6 +70,14 @@ def signup(info: schemas.StrengthFoundationSignup, db: Session = Depends(get_db)
                                                     , start_pullup_rm = info.pullup.rep_max)
     
     db.add(new_sf_signup)
+
+    # create new bodyweight entry in user_physiology table
+    new_bdyweight_entry = models.UserPhysiology(user_id = current_user.id
+                                                , measure_type = 'bodyweight'
+                                                , measure_unit = 'kg'
+                                                , measure = info.start_bodyweight)
+    
+    db.add(new_bdyweight_entry)
     db.commit()
 
     confirmation = schemas.StrengthFoundationSignupConfirm(programme_name=programme.name
@@ -78,7 +88,7 @@ def signup(info: schemas.StrengthFoundationSignup, db: Session = Depends(get_db)
 
 
 @router.put("/cancel/{id}", status_code=status.HTTP_200_OK, response_model=schemas.StrengthFoundationCancelConfirm)
-def signup(id: int, reason: schemas.StrengthFoundationCancel, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+def cancel(id: int, reason: schemas.StrengthFoundationCancel, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     
     # get programme record of Strength Foundation programme
     programme = db.query(models.Programme).filter(models.Programme.name == 'Strength Foundation').first()
@@ -113,3 +123,146 @@ def signup(id: int, reason: schemas.StrengthFoundationCancel, db: Session = Depe
                                                             )
 
     return return_object
+
+
+@router.get("/session_plan/{exercise}", status_code=status.HTTP_200_OK, response_model=schemas.SessionPlan)
+def session_plan(exercise: str, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+
+    # checks active programme for current user, and returns programme instance record along with strength_foundation_signup record
+    active_programme_instance, strength_foundation_signup_instance = check_active_programme_exists(db=db, user_id=current_user.id)
+
+    # takes in user entered exercise, checks its valid, and whether it is included in the active programme
+    start_rm, exercise_instance = check_exercise_input(db=db, submitted_exercise=exercise, strength_foundation_signup_instance=strength_foundation_signup_instance)
+
+    # returns sessions already submitted and best RM for given exercise
+    total_sessions_submitted, best_rm = query_submissions_for_exercise(db=db, exercise_instance=exercise_instance, programme_instance=active_programme_instance)
+
+    # if first session, use start/estimated RM, otherwise best seen RM in previous sessions
+    # if not first session, use best performed RM from previous session
+    if total_sessions_submitted == 0:
+        input_rm = start_rm
+    elif total_sessions_submitted > 0:
+        input_rm = best_rm
+    
+    # build session plan
+    session_plan = get_strength_foundation_session_plan(exercise_name=exercise_instance.name
+                                                , current_rm=input_rm
+                                                , session_number=total_sessions_submitted + 1
+                                                , bodyweight=strength_foundation_signup_instance.start_bodyweight)
+
+    return session_plan
+
+
+# @router.post("/submit_session", status_code=status.HTTP_200_OK, response_model=schemas.SessionPlan)
+@router.post("/submit_session", status_code=status.HTTP_200_OK)
+def submit_session(session: List[schemas.SessionCreate], db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+
+    active_programme_instance, strength_foundation_signup_instance = check_active_programme_exists(db=db, user_id=current_user.id)
+    
+    # get users bodyweight for later when creating sets
+    user_bodyweight = db.query(models.UserPhysiology). \
+        filter(models.UserPhysiology.user_id == current_user.id). \
+        filter(models.UserPhysiology.measure_type == 'bodyweight'). \
+        order_by(models.UserPhysiology.created_at.desc()). \
+        limit(1).first()
+    
+    # shouldn't ever happen as user creates bodyweight measure on signup
+    if not user_bodyweight:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f'User must submit a bodyweight reading before submitting sets')
+    
+    # create a session
+    new_session = models.Session(user_id = current_user.id
+                                 , programme_instance_id = active_programme_instance.id
+                                 , start_at = datetime.now()
+                                 , end_at = datetime.now()
+                                 , live = False
+                                 )
+    
+    db.add(new_session)
+    db.flush()
+    db.refresh(new_session)
+
+    # empty list to keep track of exercises submitted, used at the end to check no duplicates (can only submit one exercise per session)
+    exercise_list = []
+    timestamp_list = []
+
+    # since we are accepting a list of set_groups, we need to cycle through all of them and check logic on each
+    for i in range(len(session)):
+
+        # takes in user entered exercise, checks its valid, and whether it is included in the active programme
+        start_rm, exercise_instance = check_exercise_input(db=db, submitted_exercise=session[i].exercise_name, strength_foundation_signup_instance=strength_foundation_signup_instance)
+
+        # returns sessions already submitted and best RM for given exercise
+        total_sessions_submitted, best_rm = query_submissions_for_exercise(db=db, exercise_instance=exercise_instance, programme_instance=active_programme_instance)
+        
+        # checks correct session number for where user is up to in programme
+        if total_sessions_submitted != session[i].session_number -1:
+            raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST
+                                , detail = f'User has completed {total_sessions_submitted} sessions but is trying to submit session number {session[i].session_number}. Submit session {total_sessions_submitted + 1} first')
+
+   
+        exercise_list.append(session[i].exercise_name)
+        timestamp_list.append(session[i].start)
+        timestamp_list.append(session[i].end)
+
+        # create a set group for each exercise being submitted
+        new_set_group = models.SetGroup(user_id = current_user.id,
+                                        session_id = new_session.id,
+                                        exercise_id = exercise_instance.id,
+                                        bodyweight = exercise_instance.type=='bodyweight')
+        
+        db.add(new_set_group)
+        db.flush()
+        db.refresh(new_set_group)
+
+        #  this cycles through all sets for a given set_group / exercise
+        for j in range(len(session[i].set_list)):
+            
+            if exercise_instance.type == 'bodyweight':
+                final_weight = session[i].set_list[j].weight + (user_bodyweight.measure * exercise_instance.bodyweight_ratio)
+            else:
+                final_weight = session[i].set_list[j].weight
+
+            epley = get_epley(weight=final_weight
+                              , repetitions=session[i].set_list[j].repetitions 
+                              , rir=session[i].set_list[j].rir)
+            brzycki = get_brzycki(weight=final_weight
+                                  , repetitions=session[i].set_list[j].repetitions
+                                  , rir=session[i].set_list[j].rir)
+            
+            # getting average RM from epley and brz (only epley if reps > 15 as brz gets weird)
+            if session[i].set_list[j].repetitions > 15:
+                rep_max = epley
+            elif session[i].set_list[j].repetitions <= 15:
+                rep_max = round( (epley + brzycki) / 2 , 2)
+
+            new_set = models.Set(user_id = current_user.id
+                             , epley=epley
+                             , brzycki=brzycki
+                             , rep_max=rep_max
+                             , weight=session[i].set_list[j].weight
+                             , repetitions=session[i].set_list[j].repetitions
+                             , rir=session[i].set_list[j].rir
+                             , set_group_id=new_set_group.id
+                             , set_group_rank=j+1
+                             , bodyweight=exercise_instance.type=='bodyweight'
+                             , bodyweight_measure=user_bodyweight.measure
+                             , bodyweight_ratio=exercise_instance.bodyweight_ratio
+                             )
+            
+            db.add(new_set)
+
+    # this checks no duplicates are in the list of exercises
+    if len(exercise_list) != len(set(exercise_list)):
+        raise HTTPException(status_code = status.HTTP_400_BAD_REQUEST
+                                , detail = 'Cannot submit two of the same exercises in the same session')
+    
+    # update new_session start and end values after populating list of timestamps with set_group data
+    new_session.start_at = min(timestamp_list)
+    new_session.end_at = max(timestamp_list)
+
+    # create all sets of each set group
+
+    db.commit()
+    
+    return {"message": f"Successfully added new session (id={new_session.id}) with exercises {exercise_list}"}

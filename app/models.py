@@ -51,6 +51,7 @@ class SetGroup(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     session_id = Column(Integer, ForeignKey("sessions.id", ondelete="CASCADE"))
     exercise_id = Column(Integer, ForeignKey("exercises.id", ondelete="CASCADE"))
+    bodyweight = Column(Boolean, nullable=False, default=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 
@@ -67,6 +68,10 @@ class Set(Base):
     rir = Column(Integer)
     epley = Column(Double)
     brzycki = Column(Double)
+    rep_max = Column(Double)
+    bodyweight = Column(Boolean, nullable=False, default=False)
+    bodyweight_measure = Column(Double)
+    bodyweight_ratio = Column(Double)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     
@@ -76,6 +81,8 @@ class Exercise(Base):
 
     id = Column(Integer, primary_key=True, nullable=False)
     name = Column(String, nullable=False)
+    type = Column(String)
+    bodyweight_ratio = Column(Double)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
 
@@ -90,6 +97,7 @@ class Session(Base):
     end_at = Column(TIMESTAMP(timezone=True), nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    live = Column(Boolean, nullable=False, default=False)
 
 
 class ProgrammeInstance(Base):
@@ -136,5 +144,17 @@ class StrengthFoundationSignup(Base):
     start_bench_press_rm = Column(Double)
     start_overhead_press_rm = Column(Double)
     start_pullup_rm = Column(Double)
+    created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+    updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
+
+
+class UserPhysiology(Base):
+    __tablename__ = 'user_physiology'
+
+    id = Column(Integer, primary_key=True, nullable=False)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    measure_type = Column(String, nullable=False)
+    measure_unit = Column(String, nullable=False)
+    measure = Column(Double, nullable=False)
     created_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
