@@ -14,8 +14,8 @@ def get_brzycki(weight: float, repetitions: int, rir: int=0):
     brzycki = round ( weight * ( 36 / ( 37 - ( repetitions + rir ) ) ), 2 )
     return brzycki
 
-def db_query_func(db: Session):
+# def db_query_func(db: Session):
 
-    programme = db.query(models.Programme).filter(models.Programme.name == 'Strength Foundation').first()
+#     programme = db.query(models.Programme).filter(models.Programme.name == 'Strength Foundation').first()
 
-    return programme
+#     return programme
