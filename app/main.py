@@ -33,7 +33,6 @@ app.include_router(auth.router)
 app.include_router(vote.router)
 app.include_router(sets.router)
 app.include_router(strength_foundation.router)
-app.include_router(test_router.router)
 
 @app.get("/")
 async def root():
