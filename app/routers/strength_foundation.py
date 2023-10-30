@@ -310,7 +310,7 @@ def edit_session(id: int, session: schemas.SessionEdit, db: Session = Depends(ge
     return session_query.first()
 
 
-# delete sessionsss
+# delete sessions
 # check session belongs to current user
 # check programme instance isn't completed
 # what happend if user deletes a session number 4, when they have already submitted 5?
