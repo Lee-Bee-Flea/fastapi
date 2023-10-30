@@ -40,17 +40,21 @@ jobs:
           --health-retries 5
 
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [ '3.x' ]
+    # strategy:
+    #   matrix:
+    #     python-version: [ '3.x' ]
     steps:
       - name: pulling git repo
         uses: actions/checkout@v3
-      - name: install python version '3.x'
-        uses: actions/setup-python@v4
+      - name: Install python version 3.9
+        uses: actions/setup-python@v2
         with:
-          python-version: ${{ matrix.python-version }}
-          # python-version: [ '2.x', '3.x', 'pypy2.7', 'pypy3.7', 'pypy3.8' ]
+          python-version: "3.9"
+      # - name: install python version '3.x'
+      #   uses: actions/setup-python@v4
+      #   with:
+      #     python-version: ${{ matrix.python-version }}
+      #     # python-version: [ '2.x', '3.x', 'pypy2.7', 'pypy3.7', 'pypy3.8' ]
       - name: update pip
         run: python -m pip install --upgrade pip
       - name: install all dependencies
