@@ -284,7 +284,7 @@ def edit_session(id: int, session: schemas.SessionEdit, db: Session = Depends(ge
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND
                             , detail=f'Session with id {id} was not found')
     
-    # prevents updating a post that doesn't belong to the user
+    # prevents updating a session that doesn't belong to the user
     if updated_session.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN
                             , detail='Not authorized to perform requested action')
@@ -310,7 +310,7 @@ def edit_session(id: int, session: schemas.SessionEdit, db: Session = Depends(ge
     return session_query.first()
 
 
-# delete session
+# delete sessionsss
 # check session belongs to current user
 # check programme instance isn't completed
 # what happend if user deletes a session number 4, when they have already submitted 5?
