@@ -87,8 +87,8 @@ def signup(info: schemas.StrengthFoundationSignup, db: Session = Depends(get_db)
     return confirmation
 
 
-@router.put("/cancel/{id}", status_code=status.HTTP_200_OK, response_model=schemas.StrengthFoundationCancelConfirm)
-def cancel(id: int, reason: schemas.StrengthFoundationCancel, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+@router.put("/cancel_programme/{id}", status_code=status.HTTP_200_OK, response_model=schemas.StrengthFoundationCancelConfirm)
+def cancel_programme(id: int, reason: schemas.StrengthFoundationCancel, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
     
     # get programme record of Strength Foundation programme
     programme = db.query(models.Programme).filter(models.Programme.name == 'Strength Foundation').first()
@@ -266,3 +266,52 @@ def submit_session(session: List[schemas.SessionCreate], db: Session = Depends(g
     db.commit()
     
     return {"message": f"Successfully added new session (id={new_session.id}) with exercises {exercise_list}"}
+
+
+# edit session
+# check session belongs to current user
+# check programme instance isn't completed and is strength foundation and is active
+
+# @router.put("/edit/session/{id}")
+@router.put("/edit/session/{id}", response_model=schemas.SessionEditResponse)
+def edit_session(id: int, session: schemas.SessionEdit, db: Session = Depends(get_db), current_user: int = Depends(oauth2.get_current_user)):
+    
+    session_query = db.query(models.Session).filter(models.Session.id == id)
+
+    updated_session = session_query.first()  
+
+    if updated_session == None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND
+                            , detail=f'Session with id {id} was not found')
+    
+    # prevents updating a post that doesn't belong to the user
+    if updated_session.user_id != current_user.id:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN
+                            , detail='Not authorized to perform requested action')
+    
+    programme_record = db.query(models.Programme).filter(models.Programme.name == 'Strength Foundation').first()
+
+    programme_instance_record = db.query(models.ProgrammeInstance).filter(models.ProgrammeInstance.id == updated_session.programme_instance_id).first()
+
+    # if session has a programme_instance that isn't strength foundation  (id = 26)
+    if not programme_instance_record or programme_record.id != programme_instance_record.programme_id:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND
+                            , detail=f'Session with id {id} is not associated with a Strength Foundation Programme')
+    
+    # if programme instance is no longer active (id = 27)
+    if programme_instance_record.status != 'active':
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN
+                            , detail='Cannot edit a session belonging to a non-active programme')
+    
+    session_query.update(session.model_dump(), synchronize_session=False)
+
+    db.commit()
+    
+    return session_query.first()
+
+
+# delete session
+# check session belongs to current user
+# check programme instance isn't completed
+# what happend if user deletes a session number 4, when they have already submitted 5?
+# prevent deletion unless most recent session?

@@ -99,6 +99,8 @@ class Session(Base):
     updated_at = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     live = Column(Boolean, nullable=False, default=False)
 
+    owner = relationship("User")
+
 
 class ProgrammeInstance(Base):
     __tablename__ = 'programme_instances'

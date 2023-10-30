@@ -5,6 +5,8 @@ from datetime import datetime, timedelta
 from sqlalchemy.orm import Session, aliased
 from sqlalchemy import func
 
+# class StrengthFoundation:
+
 
 
 def get_strength_foundation_session_plan(exercise_name: str, current_rm: float, session_number: int, bodyweight: float):

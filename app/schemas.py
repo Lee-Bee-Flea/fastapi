@@ -162,3 +162,24 @@ class SessionCreate(BaseModel):
     start: datetime
     end: datetime
     set_list: List[SetCreate]
+
+
+class SessionEdit(BaseModel):
+    # programme_instance_id: int
+    start_at: datetime
+    end_at: datetime
+    live: bool = False
+
+
+class SessionEditResponse(SessionEdit):
+    id: int
+    created_at: datetime
+    user_id: int
+    programme_instance_id: int
+
+    owner: UserOut
+
+    # Pydantic's orm_mode will tell the Pydantic model to read the data even if it is not a dict, 
+    # but an ORM model (or any other arbitrary object with attributes).
+    class Config:
+        orm_mode = True
